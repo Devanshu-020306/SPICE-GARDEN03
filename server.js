@@ -105,7 +105,6 @@ async function start() {
     console.log('MongoDB connected');
   } catch (err) {
     console.error('MongoDB connection failed:', err.message);
-    // Server still starts; /health will return 503 until DB is reachable
   }
 
   server.listen(PORT, () => {
@@ -113,11 +112,22 @@ async function start() {
   });
 }
 
-// Handle unhandled promise rejections globally
 process.on('unhandledRejection', (reason) => {
   console.error('Unhandled rejection:', reason);
 });
 
-start();
+// Only start listening if not on Vercel
+if (process.env.VERCEL !== '1') {
+  start();
+} else {
+  // On Vercel: connect to DB lazily on first request
+  let dbConnected = false;
+  app.use(async (_req, _res, next) => {
+    if (!dbConnected && MONGO_URI) {
+      try { await mongoose.connect(MONGO_URI); dbConnected = true; } catch {}
+    }
+    next();
+  });
+}
 
-module.exports = { app, server, io };
+module.exports = app;
