@@ -47,6 +47,9 @@ app.use(express.urlencoded({ extended: false }));
 // ── Static files ──────────────────────────────────────────────────────────────
 app.use(express.static('public'));
 
+// ── Root redirect ─────────────────────────────────────────────────────────────
+app.get('/', (_req, res) => res.redirect('/start.html'));
+
 // ── Health check ──────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
   const dbReady = mongoose.connection.readyState === 1;
