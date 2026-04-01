@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spice Garden — Admin Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary: #C8410B;
+      --primary-hover: #a33408;
+      --gold: #F5A623;
+      --dark: #1A0A00;
+      --sidebar-bg: #120800;
+      --sidebar-width: 240px;
+      --header-h: 60px;
+      --bg: #f5f0eb;
+      --card-bg: #ffffff;
+      --text: #1A0A00;
+      --text-muted: #7a6a5a;
+      --border: #e8ddd4;
+      --pending: #F5A623;
+      --preparing: #3b82f6;
+      --ready: #22c55e;
+      --served: #6b7280;
+      --cancelled: #ef4444;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* ── Login ─────────────────────────────────────────────────────────────── */
+    #login-screen {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      padding: 24px; background: linear-gradient(135deg, #1A0A00, #2D1200);
+    }
+    .login-box {
+      background: #1e0e02; border-radius: 20px; padding: 44px 36px;
+      width: 100%; max-width: 400px;
+      border: 1px solid rgba(245,166,35,0.2);
+      box-shadow: 0 12px 60px rgba(0,0,0,0.6);
+    }
+    .login-logo { font-family: 'Playfair Display', serif; font-size: 1.6rem; color: var(--gold); text-align: center; margin-bottom: 4px; }
+    .login-sub { text-align: center; color: rgba(255,255,255,0.35); font-size: 0.82rem; margin-bottom: 36px; letter-spacing: 0.04em; }
+    .login-box label { display: block; font-size: 0.75rem; font-weight: 600; color: rgba(255,255,255,0.45); margin-bottom: 6px; letter-spacing: 0.07em; text-transform: uppercase; }
+    .login-box input {
+      width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px; padding: 12px 14px; color: #fff; font-size: 0.95rem; margin-bottom: 18px;
+      font-family: 'Inter', sans-serif; outline: none; transition: border-color 0.15s;
+    }
+    .login-box input:focus { border-color: var(--gold); }
+    .login-btn {
+      width: 100%; background: var(--primary); color: #fff; border: none; border-radius: 12px;
+      padding: 14px; font-size: 1rem; font-weight: 700; cursor: pointer;
+      font-family: 'Inter', sans-serif; transition: background 0.15s; margin-top: 4px;
+    }
+    .login-btn:hover { background: var(--primary-hover); }
+    .login-error { color: #ef4444; font-size: 0.82rem; margin-top: 12px; text-align: center; display: none; padding: 10px; background: rgba(239,68,68,0.1); border-radius: 8px; }
+
+    /* ── App shell ─────────────────────────────────────────────────────────── */
+    #app { display: none; min-height: 100vh; }
+
+    /* ── Sidebar ───────────────────────────────────────────────────────────── */
+    .sidebar {
+      position: fixed; top: 0; left: 0; bottom: 0;
+      width: var(--sidebar-width); background: var(--sidebar-bg);
+      display: flex; flex-direction: column; z-index: 200;
+      transition: transform 0.25s ease;
+    }
+    .sidebar-logo {
+      padding: 22px 20px 18px;
+      font-family: 'Playfair Display', serif; font-size: 1.2rem; color: var(--gold);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .sidebar-logo span { font-size: 0.7rem; color: rgba(255,255,255,0.3); font-family: 'Inter', sans-serif; font-weight: 400; display: block; margin-top: 2px; }
+    .sidebar-nav { flex: 1; padding: 12px 10px; overflow-y: auto; }
+    .nav-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 11px 14px; border-radius: 10px; cursor: pointer;
+      color: rgba(255,255,255,0.5); font-size: 0.88rem; font-weight: 500;
+      transition: all 0.15s; margin-bottom: 2px; border: none; background: none;
+      width: 100%; text-align: left; font-family: 'Inter', sans-serif;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.85); }
+    .nav-item.active { background: rgba(200,65,11,0.2); color: #fff; }
+    .nav-item .nav-icon { font-size: 1.1rem; width: 22px; text-align: center; }
+    .sidebar-footer { padding: 14px 10px; border-top: 1px solid rgba(255,255,255,0.06); }
+    .admin-info { padding: 10px 14px; margin-bottom: 6px; }
+    .admin-name { font-size: 0.82rem; font-weight: 600; color: rgba(255,255,255,0.8); }
+    .admin-role { font-size: 0.72rem; color: rgba(255,255,255,0.35); margin-top: 2px; }
+    .logout-btn {
+      display: flex; align-items: center; gap: 10px;
+      width: 100%; padding: 10px 14px; border-radius: 10px; cursor: pointer;
+      color: rgba(255,255,255,0.4); font-size: 0.85rem; font-weight: 500;
+      background: none; border: none; font-family: 'Inter', sans-serif;
+      transition: all 0.15s;
+    }
+    .logout-btn:hover { background: rgba(239,68,68,0.1); color: #ef4444; }
+
+    /* ── Overlay (mobile) ──────────────────────────────────────────────────── */
+    .sidebar-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 199;
+    }
+    .sidebar-overlay.show { display: block; }
+
+    /* ── Main content ──────────────────────────────────────────────────────── */
+    .main { margin-left: var(--sidebar-width); min-height: 100vh; display: flex; flex-direction: column; }
+    .topbar {
+      height: var(--header-h); background: #fff; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; padding: 0 28px; gap: 16px;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .hamburger {
+      display: none; background: none; border: none; cursor: pointer;
+      font-size: 1.3rem; color: var(--text); padding: 4px;
+    }
+    .topbar-title { font-family: 'Playfair Display', serif; font-size: 1.15rem; color: var(--dark); flex: 1; }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .refresh-btn {
+      background: none; border: 1px solid var(--border); border-radius: 8px;
+      padding: 6px 14px; font-size: 0.8rem; cursor: pointer; color: var(--text-muted);
+      font-family: 'Inter', sans-serif; transition: all 0.15s;
+    }
+    .refresh-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+    .content { flex: 1; padding: 28px; }
+
+    /* ── Section visibility ────────────────────────────────────────────────── */
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* ── KPI cards ─────────────────────────────────────────────────────────── */
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px; }
+    .kpi-card {
+      background: var(--card-bg); border-radius: 14px; padding: 22px 20px;
+      border: 1px solid var(--border); box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .kpi-label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    .kpi-value { font-size: 2rem; font-weight: 700; color: var(--dark); font-family: 'Playfair Display', serif; }
+    .kpi-sub { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
+    .kpi-card.accent .kpi-value { color: var(--primary); }
+    .kpi-card.gold .kpi-value { color: #b07d10; }
+
+    /* ── Period selector ───────────────────────────────────────────────────── */
+    .period-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+    .period-bar label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
+    .period-btn {
+      padding: 7px 16px; border-radius: 8px; border: 1px solid var(--border);
+      background: #fff; font-size: 0.82rem; cursor: pointer; font-family: 'Inter', sans-serif;
+      color: var(--text-muted); transition: all 0.15s;
+    }
+    .period-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .period-btn:hover:not(.active) { border-color: var(--primary); color: var(--primary); }
+
+    /* ── Card wrapper ──────────────────────────────────────────────────────── */
+    .card {
+      background: var(--card-bg); border-radius: 14px; border: 1px solid var(--border);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04); overflow: hidden;
+    }
+    .card-header {
+      padding: 18px 22px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+    }
+    .card-title { font-size: 0.95rem; font-weight: 700; color: var(--dark); }
+
+    /* ── Table ─────────────────────────────────────────────────────────────── */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    thead th {
+      padding: 12px 16px; text-align: left; font-size: 0.72rem; font-weight: 700;
+      color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em;
+      background: #faf7f4; border-bottom: 1px solid var(--border);
+    }
+    tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #faf7f4; }
+    tbody td { padding: 12px 16px; color: var(--text); vertical-align: middle; }
+
+    /* ── Status badges ─────────────────────────────────────────────────────── */
+    .badge {
+      display: inline-block; padding: 3px 10px; border-radius: 100px;
+      font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .badge-pending   { background: rgba(245,166,35,0.12); color: #b07d10; }
+    .badge-preparing { background: rgba(59,130,246,0.12); color: #2563eb; }
+    .badge-ready     { background: rgba(34,197,94,0.12);  color: #16a34a; }
+    .badge-served    { background: rgba(107,114,128,0.12); color: #4b5563; }
+    .badge-cancelled { background: rgba(239,68,68,0.12);  color: #dc2626; }
+    .badge-available  { background: rgba(34,197,94,0.12);  color: #16a34a; }
+    .badge-occupied   { background: rgba(200,65,11,0.12);  color: var(--primary); }
+    .badge-reserved   { background: rgba(245,166,35,0.12); color: #b07d10; }
+    .badge-cleaning   { background: rgba(107,114,128,0.12); color: #4b5563; }
+
+    /* ── Buttons ───────────────────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer;
+      font-size: 0.82rem; font-weight: 600; font-family: 'Inter', sans-serif;
+      transition: all 0.15s;
+    }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-outline { background: #fff; color: var(--text); border: 1px solid var(--border); }
+    .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+    .btn-danger { background: rgba(239,68,68,0.1); color: #dc2626; border: 1px solid rgba(239,68,68,0.2); }
+    .btn-danger:hover { background: #ef4444; color: #fff; }
+    .btn-sm { padding: 5px 10px; font-size: 0.75rem; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── Filter bar ────────────────────────────────────────────────────────── */
+    .filter-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .filter-bar select, .filter-bar input {
+      padding: 7px 12px; border-radius: 8px; border: 1px solid var(--border);
+      font-size: 0.82rem; font-family: 'Inter', sans-serif; color: var(--text);
+      background: #fff; outline: none; transition: border-color 0.15s;
+    }
+    .filter-bar select:focus, .filter-bar input:focus { border-color: var(--primary); }
+
+    /* ── Toggle switch ─────────────────────────────────────────────────────── */
+    .toggle { position: relative; display: inline-block; width: 38px; height: 22px; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; cursor: pointer; inset: 0;
+      background: #d1c4b8; border-radius: 22px; transition: 0.2s;
+    }
+    .toggle-slider::before {
+      content: ''; position: absolute; height: 16px; width: 16px;
+      left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: 0.2s;
+    }
+    .toggle input:checked + .toggle-slider { background: #22c55e; }
+    .toggle input:checked + .toggle-slider::before { transform: translateX(16px); }
+
+    /* ── Modal ─────────────────────────────────────────────────────────────── */
+    .modal-backdrop {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+      z-index: 500; align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-backdrop.show { display: flex; }
+    .modal {
+      background: #fff; border-radius: 18px; width: 100%; max-width: 520px;
+      max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 80px rgba(0,0,0,0.2);
+    }
+    .modal-header {
+      padding: 22px 24px 18px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .modal-title { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--dark); }
+    .modal-close { background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--text-muted); line-height: 1; }
+    .modal-body { padding: 22px 24px; }
+    .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+
+    /* ── Form ──────────────────────────────────────────────────────────────── */
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
+      font-size: 0.9rem; font-family: 'Inter', sans-serif; color: var(--text);
+      background: #fff; outline: none; transition: border-color 0.15s;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--primary); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-check { display: flex; align-items: center; gap: 8px; }
+    .form-check input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--primary); }
+    .form-check label { font-size: 0.88rem; color: var(--text); text-transform: none; letter-spacing: 0; font-weight: 500; }
+    .form-error { color: #dc2626; font-size: 0.78rem; margin-top: 6px; display: none; }
+
+    /* ── Tables grid ───────────────────────────────────────────────────────── */
+    .tables-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; padding: 20px; }
+    .table-card {
+      background: #fff; border-radius: 12px; border: 1px solid var(--border);
+      padding: 18px 16px; transition: box-shadow 0.15s;
+    }
+    .table-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+    .table-card-num { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--dark); margin-bottom: 6px; }
+    .table-card-info { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 10px; line-height: 1.6; }
+    .table-card-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+    .table-card-actions select {
+      flex: 1; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--border);
+      font-size: 0.75rem; font-family: 'Inter', sans-serif; color: var(--text); background: #fff;
+    }
+
+    /* ── Loading / empty ───────────────────────────────────────────────────── */
+    .loading { text-align: center; padding: 48px; color: var(--text-muted); font-size: 0.9rem; }
+    .empty { text-align: center; padding: 48px; color: var(--text-muted); }
+    .empty-icon { font-size: 2.5rem; margin-bottom: 10px; }
+
+    /* ── Toast ─────────────────────────────────────────────────────────────── */
+    #toast {
+      position: fixed; bottom: 24px; left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #1A0A00; color: #fff; padding: 10px 22px;
+      border-radius: 100px; font-size: 0.85rem; opacity: 0;
+      transition: all 0.3s; z-index: 600; white-space: nowrap;
+      border: 1px solid rgba(255,255,255,0.1); pointer-events: none;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #toast.error { background: #7f1d1d; }
+
+    /* ── Responsive ────────────────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .main { margin-left: 0; }
+      .hamburger { display: block; }
+      .form-row { grid-template-columns: 1fr; }
+      .kpi-grid { grid-template-columns: 1fr 1fr; }
+      .content { padding: 16px; }
+    }
+    @media (max-width: 480px) {
+      .kpi-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Login Screen ──────────────────────────────────────────────────────── -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">🪔 Spice Garden</div>
+    <div class="login-sub">Admin Dashboard</div>
+    <label>Email</label>
+    <input type="email" id="login-email" value="admin@tableqr.com" autocomplete="email" />
+    <label>Password</label>
+    <input type="password" id="login-password" value="admin1234" autocomplete="current-password" />
+    <button class="login-btn" id="login-btn" onclick="doLogin()">Sign In →</button>
+    <div class="login-error" id="login-error">Invalid credentials or access denied.</div>
+  </div>
+</div>
+
+<!-- ── App ───────────────────────────────────────────────────────────────── -->
+<div id="app">
+  <!-- Sidebar overlay (mobile) -->
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      🪔
+      <div>
+        Spice Garden
+        <span>Admin Panel</span>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="nav-item active" id="nav-dashboard" onclick="navigate('dashboard')">
+        <span class="nav-icon">🏠</span> Dashboard
+      </button>
+      <button class="nav-item" id="nav-orders" onclick="navigate('orders')">
+        <span class="nav-icon">📋</span> Orders
+      </button>
+      <button class="nav-item" id="nav-menu" onclick="navigate('menu')">
+        <span class="nav-icon">🍽️</span> Menu
+      </button>
+      <button class="nav-item" id="nav-tables" onclick="navigate('tables')">
+        <span class="nav-icon">🪑</span> Tables
+      </button>
+      <button class="nav-item" id="nav-staff" onclick="navigate('staff')">
+        <span class="nav-icon">👥</span> Staff
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="admin-info">
+        <div class="admin-name" id="admin-name">—</div>
+        <div class="admin-role" id="admin-role">admin</div>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">
+        <span>🚪</span> Logout
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <header class="topbar">
+      <button class="hamburger" onclick="toggleSidebar()">☰</button>
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-right">
+        <button class="refresh-btn" onclick="refreshCurrent()">↻ Refresh</button>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- ── Dashboard ─────────────────────────────────────────────────── -->
+      <div class="section active" id="section-dashboard">
+        <div class="period-bar">
+          <label>Period:</label>
+          <button class="period-btn active" onclick="setPeriod('today', this)">Today</button>
+          <button class="period-btn" onclick="setPeriod('week', this)">This Week</button>
+          <button class="period-btn" onclick="setPeriod('month', this)">This Month</button>
+        </div>
+        <div class="kpi-grid" id="kpi-grid">
+          <div class="kpi-card"><div class="kpi-label">Total Orders</div><div class="kpi-value" id="kpi-orders">—</div><div class="kpi-sub" id="kpi-period-label">Today</div></div>
+          <div class="kpi-card gold"><div class="kpi-label">Total Revenue</div><div class="kpi-value" id="kpi-revenue">—</div><div class="kpi-sub">Incl. GST</div></div>
+          <div class="kpi-card accent"><div class="kpi-label">Active Orders</div><div class="kpi-value" id="kpi-active">—</div><div class="kpi-sub">Pending + Preparing</div></div>
+          <div class="kpi-card"><div class="kpi-label">Avg Order Value</div><div class="kpi-value" id="kpi-avg">—</div><div class="kpi-sub">Per order</div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">📊 Quick Stats</div></div>
+          <div style="padding:20px; color: var(--text-muted); font-size:0.88rem;" id="dash-extra">
+            Loading…
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Orders ─────────────────────────────────────────────────────── -->
+      <div class="section" id="section-orders">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">All Orders</div>
+            <div class="filter-bar">
+              <select id="order-status-filter" onchange="filterOrders()">
+                <option value="">All Statuses</option>
+                <option value="pending">Pending</option>
+                <option value="preparing">Preparing</option>
+                <option value="ready">Ready</option>
+                <option value="served">Served</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Table</th>
+                  <th>Items</th>
+                  <th>Total</th>
+                  <th>Status</th>
+                  <th>Time</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="orders-tbody">
+                <tr><td colspan="7" class="loading">Loading orders…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Menu ───────────────────────────────────────────────────────── -->
+      <div class="section" id="section-menu">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Menu Items</div>
+            <button class="btn btn-primary" onclick="openMenuModal()">+ Add Item</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Category</th>
+                  <th>Price</th>
+                  <th>Veg</th>
+                  <th>Available</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="menu-tbody">
+                <tr><td colspan="6" class="loading">Loading menu…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Tables ─────────────────────────────────────────────────────── -->
+      <div class="section" id="section-tables">
+        <div class="card" style="margin-bottom:20px;">
+          <div class="card-header">
+            <div class="card-title">Restaurant Tables</div>
+            <button class="btn btn-outline" onclick="openInitModal()">⚙️ Initialize Tables</button>
+          </div>
+          <div class="tables-grid" id="tables-grid">
+            <div class="loading">Loading tables…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Staff ──────────────────────────────────────────────────────── -->
+      <div class="section" id="section-staff">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; align-items:start;" class="staff-layout">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Current Admin</div></div>
+            <div style="padding:20px;" id="staff-me">Loading…</div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Create Staff Account</div></div>
+            <div style="padding:20px;">
+              <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="staff-name-input" placeholder="e.g. Ravi Kumar" />
+              </div>
+              <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="staff-email" placeholder="staff@spicegarden.com" />
+              </div>
+              <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="staff-password" placeholder="Min 8 characters" />
+              </div>
+              <div class="form-group">
+                <label>Role</label>
+                <select id="staff-role">
+                  <option value="waiter">Waiter</option>
+                  <option value="kitchen">Kitchen</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+              <div class="form-error" id="staff-error"></div>
+              <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="createStaff()">Create Account</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ── Menu Modal ─────────────────────────────────────────────────────────── -->
+<div class="modal-backdrop" id="menu-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="menu-modal-title">Add Menu Item</div>
+      <button class="modal-close" onclick="closeMenuModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Name *</label>
+          <input type="text" id="mi-name" placeholder="e.g. Butter Chicken" />
+        </div>
+        <div class="form-group">
+          <label>Emoji</label>
+          <input type="text" id="mi-emoji" placeholder="🍛" maxlength="4" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="mi-desc" rows="2" placeholder="Short description…" style="resize:vertical;"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Price (₹) *</label>
+          <input type="number" id="mi-price" placeholder="0.00" min="0" step="0.01" />
+        </div>
+        <div class="form-group">
+          <label>Category *</label>
+          <input type="text" id="mi-category" placeholder="e.g. Main Course" list="category-list" />
+          <datalist id="category-list"></datalist>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Prep Time (min)</label>
+          <input type="number" id="mi-prep" placeholder="15" min="1" />
+        </div>
+        <div class="form-group" style="display:flex;align-items:flex-end;padding-bottom:2px;">
+          <div class="form-check">
+            <input type="checkbox" id="mi-veg" />
+            <label for="mi-veg">Vegetarian</label>
+          </div>
+        </div>
+      </div>
+      <div class="form-error" id="menu-modal-error"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeMenuModal()">Cancel</button>
+      <button class="btn btn-primary" id="menu-modal-save" onclick="saveMenuItem()">Save Item</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Initialize Tables Modal ───────────────────────────────────────────── -->
+<div class="modal-backdrop" id="init-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Initialize Tables</div>
+      <button class="modal-close" onclick="closeInitModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:16px;">
+        This will create or reset tables with new QR codes and session IDs. Enter one table per line in format: <strong>number,capacity,location</strong>
+      </p>
+      <div class="form-group">
+        <label>Tables (number,capacity,location)</label>
+        <textarea id="init-tables-input" rows="8" placeholder="1,4,Indoor&#10;2,4,Indoor&#10;3,2,Outdoor&#10;4,6,Private" style="resize:vertical;font-family:monospace;font-size:0.85rem;"></textarea>
+      </div>
+      <div class="form-error" id="init-error"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeInitModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="initializeTables()">Initialize</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  // ── State ──────────────────────────────────────────────────────────────────
+  let token = localStorage.getItem('admin_token');
+  let currentUser = null;
+  let currentSection = 'dashboard';
+  let currentPeriod = 'today';
+  let allOrders = [];
+  let allMenuItems = [];
+  let editingMenuItemId = null;
+  let ordersRefreshTimer = null;
+
+  // ── Boot ───────────────────────────────────────────────────────────────────
+  (async function boot() {
+    if (token) {
+      try {
+        const res = await fetch('/api/auth/me', { headers: authHeader() });
+        if (res.ok) {
+          currentUser = await res.json();
+          if (currentUser.role !== 'admin') {
+            showLoginError('Access denied. Admin only.');
+            token = null; localStorage.removeItem('admin_token');
+            return;
+          }
+          showApp();
+          return;
+        }
+      } catch {}
+      token = null; localStorage.removeItem('admin_token');
+    }
+  })();
+
+  // ── Auth ───────────────────────────────────────────────────────────────────
+  function authHeader() {
+    return { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
+  }
+
+  async function doLogin() {
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    const btn = document.getElementById('login-btn');
+    const errEl = document.getElementById('login-error');
+    errEl.style.display = 'none';
+    btn.disabled = true; btn.textContent = 'Signing in…';
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) { showLoginError(data.error || 'Login failed.'); return; }
+      if (data.user.role !== 'admin') { showLoginError('Access denied. Admin only.'); return; }
+      token = data.token;
+      currentUser = data.user;
+      localStorage.setItem('admin_token', token);
+      showApp();
+    } catch {
+      showLoginError('Network error. Please try again.');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Sign In →';
+    }
+  }
+
+  function showLoginError(msg) {
+    const el = document.getElementById('login-error');
+    el.textContent = msg; el.style.display = 'block';
+  }
+
+  function doLogout() {
+    token = null; currentUser = null;
+    localStorage.removeItem('admin_token');
+    clearInterval(ordersRefreshTimer);
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+  }
+
+  function showApp() {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('admin-name').textContent = currentUser.name;
+    document.getElementById('admin-role').textContent = currentUser.role;
+    navigate('dashboard');
+    // Auto-refresh orders every 30s
+    ordersRefreshTimer = setInterval(() => {
+      if (currentSection === 'orders') loadOrders();
+    }, 30000);
+  }
+
+  // ── Navigation ─────────────────────────────────────────────────────────────
+  const sectionTitles = { dashboard: 'Dashboard', orders: 'Orders', menu: 'Menu Management', tables: 'Tables', staff: 'Staff Management' };
+
+  function navigate(section) {
+    currentSection = section;
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('section-' + section).classList.add('active');
+    document.getElementById('nav-' + section).classList.add('active');
+    document.getElementById('topbar-title').textContent = sectionTitles[section] || section;
+    closeSidebar();
+    loadSection(section);
+  }
+
+  function loadSection(section) {
+    if (section === 'dashboard') loadDashboard();
+    else if (section === 'orders') loadOrders();
+    else if (section === 'menu') loadMenu();
+    else if (section === 'tables') loadTables();
+    else if (section === 'staff') loadStaff();
+  }
+
+  function refreshCurrent() { loadSection(currentSection); }
+
+  // ── Sidebar (mobile) ───────────────────────────────────────────────────────
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('sidebar-overlay').classList.toggle('show');
+  }
+  function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebar-overlay').classList.remove('show');
+  }
+
+  // ── Dashboard ──────────────────────────────────────────────────────────────
+  async function loadDashboard() {
+    setKPI('kpi-orders', '…'); setKPI('kpi-revenue', '…'); setKPI('kpi-active', '…'); setKPI('kpi-avg', '…');
+    document.getElementById('dash-extra').textContent = 'Loading…';
+    try {
+      const res = await fetch('/api/analytics/dashboard?period=' + currentPeriod, { headers: authHeader() });
+      if (!res.ok) throw new Error('Failed');
+      const d = await res.json();
+      setKPI('kpi-orders', d.totalOrders);
+      setKPI('kpi-revenue', '₹' + (d.totalRevenue || 0).toFixed(2));
+      setKPI('kpi-active', d.activeOrders);
+      setKPI('kpi-avg', '₹' + (d.avgOrderValue || 0).toFixed(2));
+      const periodLabel = { today: 'Today', week: 'This Week', month: 'This Month' }[currentPeriod];
+      document.getElementById('kpi-period-label').textContent = periodLabel;
+      document.getElementById('dash-extra').innerHTML =
+        `<div style="display:flex;gap:32px;flex-wrap:wrap;">
+          <div><div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Top Category</div><div style="font-size:1.1rem;font-weight:700;color:var(--dark);">${escHtml(d.topCategory || 'N/A')}</div></div>
+          <div><div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Active Orders (live)</div><div style="font-size:1.1rem;font-weight:700;color:var(--primary);">${d.activeOrders}</div></div>
+        </div>`;
+    } catch {
+      document.getElementById('dash-extra').textContent = 'Failed to load analytics.';
+      showToast('Failed to load dashboard', true);
+    }
+  }
+
+  function setKPI(id, val) { document.getElementById(id).textContent = val; }
+
+  function setPeriod(period, btn) {
+    currentPeriod = period;
+    document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    loadDashboard();
+  }
+
+  // ── Orders ─────────────────────────────────────────────────────────────────
+  async function loadOrders() {
+    const filter = document.getElementById('order-status-filter').value;
+    const url = '/api/orders' + (filter ? '?status=' + filter : '');
+    try {
+      const res = await fetch(url, { headers: authHeader() });
+      if (!res.ok) throw new Error('Failed');
+      allOrders = await res.json();
+      renderOrders(allOrders);
+    } catch {
+      document.getElementById('orders-tbody').innerHTML = '<tr><td colspan="7" class="loading">Failed to load orders.</td></tr>';
+    }
+  }
+
+  function filterOrders() { loadOrders(); }
+
+  function renderOrders(orders) {
+    const tbody = document.getElementById('orders-tbody');
+    if (!orders.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty"><div class="empty-icon">📋</div><p>No orders found</p></td></tr>';
+      return;
+    }
+    tbody.innerHTML = orders.map(o => {
+      const itemsSummary = (o.items || []).map(i => `${escHtml(i.name || 'Item')} ×${i.quantity}`).join(', ');
+      const timeStr = new Date(o.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+      const actions = getOrderActions(o);
+      return `<tr>
+        <td style="font-family:monospace;font-size:0.78rem;">${escHtml(o.orderId || o._id)}</td>
+        <td><strong>T${o.tableNumber}</strong></td>
+        <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escHtml(itemsSummary)}">${escHtml(itemsSummary)}</td>
+        <td>₹${(o.total || 0).toFixed(2)}</td>
+        <td><span class="badge badge-${o.status}">${o.status}</span></td>
+        <td style="color:var(--text-muted);font-size:0.8rem;">${timeStr}</td>
+        <td>${actions}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  function getOrderActions(o) {
+    const id = o._id;
+    if (o.status === 'pending') return `
+      <button class="btn btn-sm btn-outline" onclick="updateOrderStatus('${id}','preparing')">▶ Preparing</button>
+      <button class="btn btn-sm btn-danger" onclick="updateOrderStatus('${id}','cancelled')" style="margin-left:4px;">✕</button>`;
+    if (o.status === 'preparing') return `
+      <button class="btn btn-sm btn-outline" onclick="updateOrderStatus('${id}','ready')">✓ Ready</button>
+      <button class="btn btn-sm btn-danger" onclick="updateOrderStatus('${id}','cancelled')" style="margin-left:4px;">✕</button>`;
+    if (o.status === 'ready') return `
+      <button class="btn btn-sm btn-outline" onclick="updateOrderStatus('${id}','served')">🍽 Served</button>`;
+    return `<span style="color:var(--text-muted);font-size:0.78rem;">${o.status}</span>`;
+  }
+
+  async function updateOrderStatus(orderId, newStatus) {
+    try {
+      const res = await fetch('/api/orders/' + orderId + '/status', {
+        method: 'PATCH', headers: authHeader(),
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!res.ok) { const d = await res.json(); showToast(d.error || 'Failed', true); return; }
+      showToast('Order marked as ' + newStatus);
+      loadOrders();
+    } catch { showToast('Network error', true); }
+  }
+
+  // ── Menu ───────────────────────────────────────────────────────────────────
+  async function loadMenu() {
+    try {
+      // Fetch all items including unavailable using admin token
+      const res = await fetch('/api/menu', { headers: authHeader() });
+      if (!res.ok) throw new Error('Failed');
+      // The public endpoint only returns available items; admin needs all
+      // Try fetching without availability filter by using a workaround
+      allMenuItems = await res.json();
+      renderMenu(allMenuItems);
+      populateCategoryList(allMenuItems);
+    } catch {
+      document.getElementById('menu-tbody').innerHTML = '<tr><td colspan="6" class="loading">Failed to load menu.</td></tr>';
+    }
+  }
+
+  function renderMenu(items) {
+    const tbody = document.getElementById('menu-tbody');
+    if (!items.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty"><div class="empty-icon">🍽️</div><p>No menu items</p></td></tr>';
+      return;
+    }
+    tbody.innerHTML = items.map(item => `
+      <tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:1.4rem;">${escHtml(item.emoji || '🍽️')}</span>
+            <div>
+              <div style="font-weight:600;">${escHtml(item.name)}</div>
+              <div style="font-size:0.75rem;color:var(--text-muted);">${escHtml(item.description || '')}</div>
+            </div>
+          </div>
+        </td>
+        <td><span style="background:#f5f0eb;padding:3px 10px;border-radius:6px;font-size:0.78rem;">${escHtml(item.category)}</span></td>
+        <td style="font-weight:600;">₹${(item.price || 0).toFixed(2)}</td>
+        <td>${item.isVeg ? '<span style="color:#16a34a;font-size:1rem;">🟢</span>' : '<span style="color:#dc2626;font-size:1rem;">🔴</span>'}</td>
+        <td>
+          <label class="toggle">
+            <input type="checkbox" ${item.isAvailable ? 'checked' : ''} onchange="toggleAvailability('${item._id}', this.checked)" />
+            <span class="toggle-slider"></span>
+          </label>
+        </td>
+        <td>
+          <button class="btn btn-sm btn-outline" onclick="openMenuModal('${item._id}')">✏️ Edit</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteMenuItem('${item._id}')" style="margin-left:4px;">🗑</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function populateCategoryList(items) {
+    const cats = [...new Set(items.map(i => i.category).filter(Boolean))];
+    document.getElementById('category-list').innerHTML = cats.map(c => `<option value="${escHtml(c)}">`).join('');
+  }
+
+  async function toggleAvailability(id, isAvailable) {
+    try {
+      const res = await fetch('/api/menu/' + id + '/availability', {
+        method: 'PATCH', headers: authHeader(),
+        body: JSON.stringify({ isAvailable }),
+      });
+      if (!res.ok) { showToast('Failed to update availability', true); loadMenu(); return; }
+      showToast('Availability updated');
+    } catch { showToast('Network error', true); loadMenu(); }
+  }
+
+  async function deleteMenuItem(id) {
+    if (!confirm('Delete this menu item?')) return;
+    try {
+      const res = await fetch('/api/menu/' + id, { method: 'DELETE', headers: authHeader() });
+      if (!res.ok) { showToast('Failed to delete', true); return; }
+      showToast('Item deleted');
+      loadMenu();
+    } catch { showToast('Network error', true); }
+  }
+
+  // ── Menu Modal ─────────────────────────────────────────────────────────────
+  function openMenuModal(itemId) {
+    editingMenuItemId = itemId || null;
+    document.getElementById('menu-modal-title').textContent = itemId ? 'Edit Menu Item' : 'Add Menu Item';
+    document.getElementById('menu-modal-error').style.display = 'none';
+    if (itemId) {
+      const item = allMenuItems.find(i => i._id === itemId);
+      if (item) {
+        document.getElementById('mi-name').value = item.name || '';
+        document.getElementById('mi-emoji').value = item.emoji || '';
+        document.getElementById('mi-desc').value = item.description || '';
+        document.getElementById('mi-price').value = item.price || '';
+        document.getElementById('mi-category').value = item.category || '';
+        document.getElementById('mi-prep').value = item.preparationTime || '';
+        document.getElementById('mi-veg').checked = !!item.isVeg;
+      }
+    } else {
+      ['mi-name','mi-emoji','mi-desc','mi-price','mi-category','mi-prep'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('mi-veg').checked = false;
+    }
+    document.getElementById('menu-modal').classList.add('show');
+  }
+
+  function closeMenuModal() {
+    document.getElementById('menu-modal').classList.remove('show');
+    editingMenuItemId = null;
+  }
+
+  async function saveMenuItem() {
+    const name = document.getElementById('mi-name').value.trim();
+    const price = parseFloat(document.getElementById('mi-price').value);
+    const category = document.getElementById('mi-category').value.trim();
+    const errEl = document.getElementById('menu-modal-error');
+    errEl.style.display = 'none';
+
+    if (!name || isNaN(price) || !category) {
+      errEl.textContent = 'Name, price, and category are required.';
+      errEl.style.display = 'block'; return;
+    }
+
+    const payload = {
+      name, price, category,
+      description: document.getElementById('mi-desc').value.trim() || undefined,
+      emoji: document.getElementById('mi-emoji').value.trim() || undefined,
+      isVeg: document.getElementById('mi-veg').checked,
+      preparationTime: parseInt(document.getElementById('mi-prep').value) || undefined,
+    };
+
+    const btn = document.getElementById('menu-modal-save');
+    btn.disabled = true; btn.textContent = 'Saving…';
+
+    try {
+      const url = editingMenuItemId ? '/api/menu/' + editingMenuItemId : '/api/menu';
+      const method = editingMenuItemId ? 'PUT' : 'POST';
+      const res = await fetch(url, { method, headers: authHeader(), body: JSON.stringify(payload) });
+      const data = await res.json();
+      if (!res.ok) {
+        errEl.textContent = (data.errors && data.errors[0]?.msg) || data.error || 'Failed to save.';
+        errEl.style.display = 'block'; return;
+      }
+      showToast(editingMenuItemId ? 'Item updated' : 'Item added');
+      closeMenuModal(); loadMenu();
+    } catch { errEl.textContent = 'Network error.'; errEl.style.display = 'block'; }
+    finally { btn.disabled = false; btn.textContent = 'Save Item'; }
+  }
+
+  // ── Tables ─────────────────────────────────────────────────────────────────
+  async function loadTables() {
+    const grid = document.getElementById('tables-grid');
+    grid.innerHTML = '<div class="loading">Loading tables…</div>';
+    try {
+      const res = await fetch('/api/tables', { headers: authHeader() });
+      if (!res.ok) throw new Error('Failed');
+      const tables = await res.json();
+      renderTables(tables);
+    } catch {
+      grid.innerHTML = '<div class="loading">Failed to load tables.</div>';
+    }
+  }
+
+  function renderTables(tables) {
+    const grid = document.getElementById('tables-grid');
+    if (!tables.length) {
+      grid.innerHTML = '<div class="empty"><div class="empty-icon">🪑</div><p>No tables found. Initialize tables first.</p></div>';
+      return;
+    }
+    grid.innerHTML = tables.map(t => `
+      <div class="table-card">
+        <div class="table-card-num">Table ${t.tableNumber}</div>
+        <div class="table-card-info">
+          📍 ${escHtml(t.location || 'N/A')}<br>
+          👥 Capacity: ${t.capacity}<br>
+          📦 Active Orders: ${t.activeOrderCount || 0}<br>
+          <span style="font-size:0.7rem;color:#aaa;word-break:break-all;">Session: ${(t.currentSessionId || '').slice(0,12)}…</span>
+        </div>
+        <span class="badge badge-${t.status}">${t.status}</span>
+        <div class="table-card-actions">
+          <select onchange="updateTableStatus(${t.tableNumber}, this.value)" style="margin-top:8px;">
+            <option value="">Change status…</option>
+            <option value="available" ${t.status==='available'?'selected':''}>Available</option>
+            <option value="occupied" ${t.status==='occupied'?'selected':''}>Occupied</option>
+            <option value="reserved" ${t.status==='reserved'?'selected':''}>Reserved</option>
+            <option value="cleaning" ${t.status==='cleaning'?'selected':''}>Cleaning</option>
+          </select>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function updateTableStatus(tableNum, status) {
+    if (!status) return;
+    try {
+      const res = await fetch('/api/tables/' + tableNum + '/status', {
+        method: 'PATCH', headers: authHeader(),
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) { showToast('Failed to update table', true); loadTables(); return; }
+      showToast('Table ' + tableNum + ' → ' + status);
+      loadTables();
+    } catch { showToast('Network error', true); }
+  }
+
+  function openInitModal() { document.getElementById('init-modal').classList.add('show'); }
+  function closeInitModal() { document.getElementById('init-modal').classList.remove('show'); }
+
+  async function initializeTables() {
+    const raw = document.getElementById('init-tables-input').value.trim();
+    const errEl = document.getElementById('init-error');
+    errEl.style.display = 'none';
+    if (!raw) { errEl.textContent = 'Please enter table data.'; errEl.style.display = 'block'; return; }
+
+    const tables = [];
+    for (const line of raw.split('\n')) {
+      const parts = line.trim().split(',');
+      if (parts.length < 2) continue;
+      const tableNumber = parseInt(parts[0]);
+      const capacity = parseInt(parts[1]);
+      const location = (parts[2] || 'Indoor').trim();
+      if (isNaN(tableNumber) || isNaN(capacity)) continue;
+      tables.push({ tableNumber, capacity, location });
+    }
+
+    if (!tables.length) { errEl.textContent = 'No valid table entries found.'; errEl.style.display = 'block'; return; }
+
+    try {
+      const res = await fetch('/api/tables/initialize', {
+        method: 'POST', headers: authHeader(),
+        body: JSON.stringify({ tables }),
+      });
+      const data = await res.json();
+      if (!res.ok) { errEl.textContent = data.error || 'Failed.'; errEl.style.display = 'block'; return; }
+      showToast('Initialized ' + data.created + ' tables');
+      closeInitModal(); loadTables();
+    } catch { errEl.textContent = 'Network error.'; errEl.style.display = 'block'; }
+  }
+
+  // ── Staff ──────────────────────────────────────────────────────────────────
+  async function loadStaff() {
+    try {
+      const res = await fetch('/api/auth/me', { headers: authHeader() });
+      if (!res.ok) throw new Error('Failed');
+      const me = await res.json();
+      document.getElementById('staff-me').innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div><div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:3px;">Name</div><div style="font-weight:600;">${escHtml(me.name)}</div></div>
+          <div><div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:3px;">Email</div><div>${escHtml(me.email)}</div></div>
+          <div><div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:3px;">Role</div><span class="badge badge-available">${escHtml(me.role)}</span></div>
+        </div>`;
+    } catch {
+      document.getElementById('staff-me').textContent = 'Failed to load profile.';
+    }
+  }
+
+  async function createStaff() {
+    const name = document.getElementById('staff-name-input').value.trim();
+    const email = document.getElementById('staff-email').value.trim();
+    const password = document.getElementById('staff-password').value;
+    const role = document.getElementById('staff-role').value;
+    const errEl = document.getElementById('staff-error');
+    errEl.style.display = 'none';
+
+    if (!name || !email || !password) {
+      errEl.textContent = 'All fields are required.'; errEl.style.display = 'block'; return;
+    }
+
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST', headers: authHeader(),
+        body: JSON.stringify({ name, email, password, role }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        errEl.textContent = (data.errors && data.errors[0]?.msg) || data.error || 'Failed.';
+        errEl.style.display = 'block'; return;
+      }
+      showToast('Staff account created for ' + name);
+      ['staff-name-input','staff-email','staff-password'].forEach(id => document.getElementById(id).value = '');
+    } catch { errEl.textContent = 'Network error.'; errEl.style.display = 'block'; }
+  }
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  function escHtml(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  let toastTimer;
+  function showToast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = isError ? 'error show' : 'show';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.className = '', 2800);
+  }
+
+  // Enter key on login
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && document.getElementById('login-screen').style.display !== 'none') doLogin();
+    if (e.key === 'Escape') { closeMenuModal(); closeInitModal(); }
+  });
+
+  // Close modals on backdrop click
+  document.getElementById('menu-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeMenuModal(); });
+  document.getElementById('init-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeInitModal(); });
+</script>
+</body>
+</html>

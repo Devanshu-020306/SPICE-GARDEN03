@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spice Garden — Fine Indian Dining</title>
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#C8410B" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Spice Garden" />
+  <link rel="apple-touch-icon" href="/icons/icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #C8410B;
+      --primary-dark: #a33408;
+      --gold: #F5A623;
+      --dark-bg: #1A0A00;
+      --card-bg: #2D1200;
+      --light-bg: #FFF8F0;
+      --text-dark: #1A0A00;
+      --text-light: #FFF8F0;
+      --muted: #8B6347;
+      --veg: #2E7D32;
+      --nonveg: #C62828;
+      --shadow: 0 4px 24px rgba(200,65,11,0.15);
+      --shadow-lg: 0 8px 40px rgba(200,65,11,0.25);
+      --radius: 16px;
+      --radius-btn: 24px;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--dark-bg);
+      color: var(--text-light);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Indian pattern background ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Ccircle cx='30' cy='30' r='2' fill='%23F5A623' opacity='0.08'/%3E%3Ccircle cx='30' cy='30' r='10' fill='none' stroke='%23F5A623' stroke-width='0.5' opacity='0.06'/%3E%3Ccircle cx='30' cy='30' r='18' fill='none' stroke='%23C8410B' stroke-width='0.5' opacity='0.05'/%3E%3Cpath d='M30 12 L32 28 L30 30 L28 28 Z' fill='%23F5A623' opacity='0.05'/%3E%3Cpath d='M30 48 L32 32 L30 30 L28 32 Z' fill='%23F5A623' opacity='0.05'/%3E%3Cpath d='M12 30 L28 32 L30 30 L28 28 Z' fill='%23F5A623' opacity='0.05'/%3E%3Cpath d='M48 30 L32 32 L30 30 L32 28 Z' fill='%23F5A623' opacity='0.05'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Floating food items ── */
+    .floaters {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 0;
+    }
+    .floater {
+      position: absolute;
+      font-size: 2rem;
+      opacity: 0;
+      animation: floatUp linear infinite;
+      user-select: none;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+    }
+    @keyframes floatUp {
+      0%   { transform: translateY(0) rotate(0deg) scale(0.8);  opacity: 0; }
+      10%  { opacity: 0.35; }
+      80%  { opacity: 0.25; }
+      100% { transform: translateY(-110vh) rotate(25deg) scale(1.1); opacity: 0; }
+    }
+
+    /* ── Hero ── */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px 24px 60px;
+      background: linear-gradient(160deg, #1A0A00 0%, #2D1200 50%, #1A0A00 100%);
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 120px;
+      background: linear-gradient(to bottom, transparent, var(--light-bg));
+      pointer-events: none;
+    }
+
+    /* Mandala SVG decoration */
+    .mandala {
+      width: 280px;
+      height: 280px;
+      margin-bottom: 32px;
+      opacity: 0.9;
+      animation: slowSpin 40s linear infinite;
+    }
+    @keyframes slowSpin { to { transform: rotate(360deg); } }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(245,166,35,0.15);
+      border: 1px solid rgba(245,166,35,0.3);
+      border-radius: 100px;
+      padding: 6px 18px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 20px;
+    }
+
+    .hero h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.8rem, 8vw, 5rem);
+      font-weight: 900;
+      color: var(--text-light);
+      line-height: 1.1;
+      margin-bottom: 16px;
+      text-shadow: 0 2px 20px rgba(200,65,11,0.4);
+    }
+
+    .hero h1 span {
+      color: var(--gold);
+    }
+
+    .hero-tagline {
+      font-size: clamp(1rem, 3vw, 1.25rem);
+      color: rgba(255,248,240,0.7);
+      font-weight: 300;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+    }
+
+    .hero-divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 24px auto;
+      width: 200px;
+    }
+    .hero-divider::before, .hero-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--gold));
+    }
+    .hero-divider::after {
+      background: linear-gradient(to left, transparent, var(--gold));
+    }
+    .hero-divider span { color: var(--gold); font-size: 1rem; }
+
+    .hero-scroll-hint {
+      position: absolute;
+      bottom: 140px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      color: rgba(255,248,240,0.4);
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      animation: bounce 2s ease-in-out infinite;
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(6px); }
+    }
+
+    /* ── Tables section ── */
+    .tables-section {
+      background: var(--light-bg);
+      position: relative;
+      z-index: 1;
+      padding: 60px 24px 80px;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .section-eyebrow {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--primary);
+      margin-bottom: 10px;
+    }
+
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.8rem, 5vw, 2.5rem);
+      font-weight: 700;
+      color: var(--text-dark);
+      margin-bottom: 12px;
+    }
+
+    .section-subtitle {
+      color: var(--muted);
+      font-size: 0.95rem;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    /* ── Table grid ── */
+    .table-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 20px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .table-card {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      text-decoration: none;
+      color: var(--text-dark);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid rgba(200,65,11,0.08);
+    }
+    .table-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .table-card-top {
+      background: linear-gradient(135deg, var(--dark-bg) 0%, var(--card-bg) 100%);
+      padding: 28px 20px 20px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .table-card-top::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Ccircle cx='20' cy='20' r='12' fill='none' stroke='%23F5A623' stroke-width='0.5' opacity='0.15'/%3E%3Ccircle cx='20' cy='20' r='6' fill='none' stroke='%23F5A623' stroke-width='0.5' opacity='0.1'/%3E%3C/svg%3E");
+    }
+
+    .table-number {
+      font-family: 'Playfair Display', serif;
+      font-size: 3rem;
+      font-weight: 900;
+      color: var(--gold);
+      line-height: 1;
+      position: relative;
+    }
+
+    .table-number-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(255,248,240,0.5);
+      margin-top: 4px;
+      position: relative;
+    }
+
+    .table-card-body {
+      padding: 16px 20px 20px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .table-location-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(200,65,11,0.08);
+      color: var(--primary);
+      border-radius: 100px;
+      padding: 4px 12px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: capitalize;
+      letter-spacing: 0.05em;
+      width: fit-content;
+    }
+
+    .table-capacity {
+      font-size: 0.82rem;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .table-dine-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: var(--primary);
+      color: #fff;
+      border-radius: var(--radius-btn);
+      padding: 10px 20px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-top: auto;
+      transition: background 0.15s;
+      letter-spacing: 0.02em;
+    }
+    .table-card:hover .table-dine-btn {
+      background: var(--primary-dark);
+    }
+
+    /* ── Loading / Error states ── */
+    .state-box {
+      text-align: center;
+      padding: 60px 24px;
+      color: var(--muted);
+    }
+    .state-box .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid rgba(200,65,11,0.15);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Footer ── */
+    footer {
+      background: var(--dark-bg);
+      color: rgba(255,248,240,0.5);
+      text-align: center;
+      padding: 40px 24px;
+      font-size: 0.82rem;
+      position: relative;
+      z-index: 1;
+    }
+    footer .footer-logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.4rem;
+      color: var(--gold);
+      margin-bottom: 8px;
+    }
+    footer .footer-info {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 16px;
+      margin-top: 16px;
+      font-size: 0.78rem;
+    }
+    footer .footer-info span {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    footer .footer-copy {
+      margin-top: 24px;
+      font-size: 0.72rem;
+      opacity: 0.4;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Hero -->
+<section class="hero">
+
+  <!-- Floating food items -->
+  <div class="floaters" aria-hidden="true" id="floaters"></div>
+  <!-- Mandala SVG -->
+  <svg class="mandala" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="100" cy="100" r="4" fill="#F5A623" opacity="0.9"/>
+    <circle cx="100" cy="100" r="15" fill="none" stroke="#F5A623" stroke-width="1" opacity="0.6"/>
+    <circle cx="100" cy="100" r="30" fill="none" stroke="#C8410B" stroke-width="0.8" opacity="0.5"/>
+    <circle cx="100" cy="100" r="45" fill="none" stroke="#F5A623" stroke-width="0.6" opacity="0.4"/>
+    <circle cx="100" cy="100" r="60" fill="none" stroke="#C8410B" stroke-width="0.5" opacity="0.3"/>
+    <circle cx="100" cy="100" r="75" fill="none" stroke="#F5A623" stroke-width="0.4" opacity="0.25"/>
+    <circle cx="100" cy="100" r="90" fill="none" stroke="#C8410B" stroke-width="0.3" opacity="0.2"/>
+    <!-- Petals -->
+    <g opacity="0.7">
+      <ellipse cx="100" cy="70" rx="5" ry="12" fill="#F5A623" opacity="0.5"/>
+      <ellipse cx="100" cy="130" rx="5" ry="12" fill="#F5A623" opacity="0.5"/>
+      <ellipse cx="70" cy="100" rx="12" ry="5" fill="#F5A623" opacity="0.5"/>
+      <ellipse cx="130" cy="100" rx="12" ry="5" fill="#F5A623" opacity="0.5"/>
+      <ellipse cx="79" cy="79" rx="5" ry="12" fill="#C8410B" opacity="0.4" transform="rotate(45 79 79)"/>
+      <ellipse cx="121" cy="79" rx="5" ry="12" fill="#C8410B" opacity="0.4" transform="rotate(-45 121 79)"/>
+      <ellipse cx="79" cy="121" rx="5" ry="12" fill="#C8410B" opacity="0.4" transform="rotate(-45 79 121)"/>
+      <ellipse cx="121" cy="121" rx="5" ry="12" fill="#C8410B" opacity="0.4" transform="rotate(45 121 121)"/>
+    </g>
+    <!-- Outer petals -->
+    <g opacity="0.4">
+      <ellipse cx="100" cy="46" rx="4" ry="10" fill="#F5A623" opacity="0.5"/>
+      <ellipse cx="100" cy="154" rx="4" ry="10" fill="#F5A623" opacity="0.5"/>
+      <ellipse cx="46" cy="100" rx="10" ry="4" fill="#F5A623" opacity="0.5"/>
+      <ellipse cx="154" cy="100" rx="10" ry="4" fill="#F5A623" opacity="0.5"/>
+      <ellipse cx="59" cy="59" rx="4" ry="10" fill="#F5A623" opacity="0.4" transform="rotate(45 59 59)"/>
+      <ellipse cx="141" cy="59" rx="4" ry="10" fill="#F5A623" opacity="0.4" transform="rotate(-45 141 59)"/>
+      <ellipse cx="59" cy="141" rx="4" ry="10" fill="#F5A623" opacity="0.4" transform="rotate(-45 59 141)"/>
+      <ellipse cx="141" cy="141" rx="4" ry="10" fill="#F5A623" opacity="0.4" transform="rotate(45 141 141)"/>
+    </g>
+    <!-- Dots ring -->
+    <circle cx="100" cy="55" r="2.5" fill="#F5A623" opacity="0.6"/>
+    <circle cx="100" cy="145" r="2.5" fill="#F5A623" opacity="0.6"/>
+    <circle cx="55" cy="100" r="2.5" fill="#F5A623" opacity="0.6"/>
+    <circle cx="145" cy="100" r="2.5" fill="#F5A623" opacity="0.6"/>
+    <circle cx="67" cy="67" r="2" fill="#C8410B" opacity="0.5"/>
+    <circle cx="133" cy="67" r="2" fill="#C8410B" opacity="0.5"/>
+    <circle cx="67" cy="133" r="2" fill="#C8410B" opacity="0.5"/>
+    <circle cx="133" cy="133" r="2" fill="#C8410B" opacity="0.5"/>
+  </svg>
+
+  <div class="hero-badge">✦ Est. 1998 · Mumbai ✦</div>
+
+  <h1>Spice<br/><span>Garden</span></h1>
+  <p class="hero-tagline">Authentic Indian Cuisine</p>
+
+  <div class="hero-divider"><span>🪔</span></div>
+
+  <p style="color:rgba(255,248,240,0.55);font-size:0.9rem;max-width:320px;line-height:1.6;">
+    Where every dish tells a story of tradition, spice, and love.
+  </p>
+
+  <div class="hero-scroll-hint">
+    <span>Select Table</span>
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M8 3v10M3 9l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+</section>
+
+<!-- Tables section -->
+<section class="tables-section">
+  <div class="section-header">
+    <p class="section-eyebrow">✦ Choose Your Spot ✦</p>
+    <h2 class="section-title">Select Your Table</h2>
+    <p class="section-subtitle">Pick a table and we'll bring the flavours of India to you.</p>
+  </div>
+
+  <div class="table-grid" id="table-grid">
+    <div class="state-box" style="grid-column:1/-1">
+      <div class="spinner"></div>
+      <p>Finding available tables…</p>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="footer-logo">🪔 Spice Garden</div>
+  <p>Fine Indian Dining Experience</p>
+  <div class="footer-info">
+    <span>📍 Mumbai, Maharashtra</span>
+    <span>📞 +91 1234567890</span>
+    <span>🕐 12pm – 11pm Daily</span>
+  </div>
+  <p class="footer-copy">© 2024 Spice Garden. All rights reserved.</p>
+</footer>
+
+<script>
+  const LOCATION_ICONS = {
+    indoor: '🏠',
+    outdoor: '🌿',
+    terrace: '🌅',
+    rooftop: '🌃',
+  };
+
+  async function load() {
+    try {
+      const res = await fetch('/api/tables-public');
+      if (!res.ok) throw new Error('Failed');
+      const tables = await res.json();
+      renderTables(tables);
+    } catch (e) {
+      document.getElementById('table-grid').innerHTML = `
+        <div class="state-box" style="grid-column:1/-1">
+          <p style="font-size:2rem;margin-bottom:8px">⚠️</p>
+          <p>Could not load tables. Please try again.</p>
+        </div>`;
+    }
+  }
+
+  function renderTables(tables) {
+    const grid = document.getElementById('table-grid');
+    if (!tables.length) {
+      grid.innerHTML = '<div class="state-box" style="grid-column:1/-1"><p>No tables available right now.</p></div>';
+      return;
+    }
+    grid.innerHTML = '';
+    tables.forEach(t => {
+      const loc = (t.location || 'indoor').toLowerCase();
+      const icon = LOCATION_ICONS[loc] || '🪑';
+      const a = document.createElement('a');
+      a.className = 'table-card';
+      a.href = `/index.html?table=${t.tableNumber}&session=${t.currentSessionId}`;
+      a.innerHTML = `
+        <div class="table-card-top">
+          <div class="table-number">${t.tableNumber}</div>
+          <div class="table-number-label">Table</div>
+        </div>
+        <div class="table-card-body">
+          <span class="table-location-badge">${icon} ${loc}</span>
+          <span class="table-capacity">👥 ${t.capacity || 4} guests</span>
+          <div class="table-dine-btn">Dine Here →</div>
+        </div>
+      `;
+      grid.appendChild(a);
+    });
+  }
+
+  load();
+
+  // ── Register service worker (PWA) ─────────────────────────────────────────
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  }
+
+  // ── Floating food items ───────────────────────────────────────────────────
+  const FOODS = ['🍛','🍚','🥘','🫕','🍲','🥗','🫓','🍗','🥭','🍮','🧆','🫙','🌶️','🧅','🥜','🍱','🫔','🥙','🧄','🍜'];
+  const container = document.getElementById('floaters');
+  FOODS.forEach((emoji, i) => {
+    const el = document.createElement('span');
+    el.className = 'floater';
+    el.textContent = emoji;
+    el.style.left = (5 + (i * 4.5) % 90) + '%';
+    el.style.bottom = '-80px';
+    el.style.fontSize = (1.4 + Math.random() * 1.4) + 'rem';
+    el.style.animationDuration = (12 + Math.random() * 16) + 's';
+    el.style.animationDelay = (Math.random() * 14) + 's';
+    container.appendChild(el);
+  });
+  // Add a second wave
+  FOODS.slice(0, 10).forEach((emoji, i) => {
+    const el = document.createElement('span');
+    el.className = 'floater';
+    el.textContent = emoji;
+    el.style.left = (2 + (i * 9 + 4) % 92) + '%';
+    el.style.bottom = '-80px';
+    el.style.fontSize = (1 + Math.random() * 1) + 'rem';
+    el.style.animationDuration = (18 + Math.random() * 12) + 's';
+    el.style.animationDelay = (Math.random() * 20) + 's';
+    container.appendChild(el);
+  });
+</script>
+</body>
+</html>

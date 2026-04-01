@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spice Garden — Track Order</title>
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#C8410B" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Spice Garden" />
+  <link rel="apple-touch-icon" href="/icons/icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary: #C8410B;
+      --primary-dark: #a33408;
+      --gold: #F5A623;
+      --dark-bg: #1A0A00;
+      --card-bg: #2D1200;
+      --light-bg: #FFF8F0;
+      --text-dark: #1A0A00;
+      --text-light: #FFF8F0;
+      --muted: #8B6347;
+      --border: rgba(200,65,11,0.12);
+      --shadow: 0 4px 24px rgba(200,65,11,0.15);
+      --radius: 16px;
+      --radius-btn: 24px;
+      --pending: #F5A623;
+      --preparing: #C8410B;
+      --ready: #2E7D32;
+      --served: #8B6347;
+      --cancelled: #C62828;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--light-bg);
+      color: var(--text-dark);
+      min-height: 100vh;
+    }
+    /* ── Header ── */
+    header {
+      background: var(--dark-bg);
+      color: var(--text-light);
+      padding: 0 20px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.4);
+      border-bottom: 1px solid rgba(245,166,35,0.15);
+    }
+    .header-back {
+      background: rgba(245,166,35,0.12);
+      border: none;
+      color: var(--gold);
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      font-size: 1rem;
+      text-decoration: none;
+    }
+    .header-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-light);
+    }
+    .table-badge {
+      background: rgba(245,166,35,0.15);
+      border: 1px solid rgba(245,166,35,0.3);
+      border-radius: 100px;
+      padding: 4px 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--gold);
+    }
+    /* ── Loading / Error ── */
+    #loading-screen, #error-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      padding: 24px;
+      text-align: center;
+      gap: 12px;
+    }
+    #error-screen { display: none; }
+    .spinner {
+      width: 44px; height: 44px;
+      border: 3px solid rgba(200,65,11,0.15);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #error-screen .error-icon { font-size: 3rem; }
+    #error-screen h2 { font-family: 'Playfair Display', serif; color: var(--text-dark); }
+    #error-screen p { color: var(--muted); max-width: 280px; }
+    /* ── Main content ── */
+    #track-content {
+      display: none;
+      max-width: 540px;
+      margin: 0 auto;
+      padding: 20px 16px 60px;
+    }
+    /* ── Order ID row ── */
+    .order-id-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .order-id {
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+    .order-id strong { color: var(--text-dark); font-weight: 700; }
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.75rem;
+      color: #2E7D32;
+      font-weight: 700;
+      background: rgba(46,125,50,0.1);
+      border-radius: 100px;
+      padding: 4px 10px;
+    }
+    .live-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #2E7D32;
+      animation: livePulse 1.5s ease-in-out infinite;
+    }
+    @keyframes livePulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.7); }
+    }
+    /* ── Status card ── */
+    .status-card {
+      background: linear-gradient(135deg, var(--dark-bg) 0%, var(--card-bg) 100%);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 28px 24px;
+      margin-bottom: 16px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(245,166,35,0.1);
+    }
+    .status-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50'%3E%3Ccircle cx='25' cy='25' r='10' fill='none' stroke='%23F5A623' stroke-width='0.4' opacity='0.08'/%3E%3C/svg%3E");
+      pointer-events: none;
+    }
+    .status-emoji-wrap {
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      background: rgba(245,166,35,0.12);
+      border: 2px solid rgba(245,166,35,0.2);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 16px;
+      font-size: 2.4rem;
+      position: relative;
+    }
+    .status-emoji-wrap.pulse {
+      animation: statusPulse 2s ease-in-out infinite;
+    }
+    @keyframes statusPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(245,166,35,0.3); }
+      50% { box-shadow: 0 0 0 12px rgba(245,166,35,0); }
+    }
+    .status-label {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      text-transform: capitalize;
+      margin-bottom: 6px;
+      position: relative;
+    }
+    .status-label.pending   { color: var(--pending); }
+    .status-label.preparing { color: #ff7043; }
+    .status-label.ready     { color: #66bb6a; }
+    .status-label.served    { color: var(--muted); }
+    .status-label.cancelled { color: var(--cancelled); }
+    .status-msg {
+      font-size: 0.88rem;
+      color: rgba(255,248,240,0.6);
+      position: relative;
+    }
+    .eta-row {
+      font-size: 0.85rem;
+      color: rgba(255,248,240,0.55);
+      margin-top: 6px;
+      position: relative;
+    }
+    .eta-row strong { color: var(--gold); }
+    /* ── Progress stepper ── */
+    .stepper-card {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px 16px;
+      margin-bottom: 16px;
+      border: 1px solid var(--border);
+    }
+    .stepper-card h3 {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+    .progress-track {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      position: relative;
+    }
+    .progress-track::before {
+      content: '';
+      position: absolute;
+      top: 20px;
+      left: 28px; right: 28px;
+      height: 3px;
+      background: rgba(200,65,11,0.12);
+      z-index: 0;
+      border-radius: 2px;
+    }
+    .progress-fill {
+      position: absolute;
+      top: 20px;
+      left: 28px;
+      height: 3px;
+      background: linear-gradient(to right, var(--primary), var(--gold));
+      z-index: 1;
+      transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+      border-radius: 2px;
+    }
+    .step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      z-index: 2;
+      flex: 1;
+    }
+    .step-dot {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: rgba(200,65,11,0.08);
+      border: 2.5px solid rgba(200,65,11,0.15);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+      transition: all 0.3s;
+    }
+    .step.done .step-dot {
+      background: var(--primary);
+      border-color: var(--primary);
+      box-shadow: 0 2px 8px rgba(200,65,11,0.3);
+    }
+    .step.active .step-dot {
+      background: #fff;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 5px rgba(200,65,11,0.12);
+    }
+    .step-label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.3;
+    }
+    .step.done .step-label,
+    .step.active .step-label { color: var(--primary); }
+    /* ── Countdown card ── */
+    .countdown-card {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px 20px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      border: 1px solid var(--border);
+    }
+    .countdown-icon-wrap {
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      background: rgba(200,65,11,0.08);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.6rem;
+      flex-shrink: 0;
+    }
+    .countdown-info { flex: 1; }
+    .countdown-title { font-size: 0.75rem; color: var(--muted); font-weight: 600; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .countdown-value { font-size: 1.5rem; font-weight: 800; color: var(--primary); font-family: 'Inter', sans-serif; }
+    /* ── Order summary card ── */
+    .summary-card {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px 20px;
+      margin-bottom: 16px;
+      border: 1px solid var(--border);
+    }
+    .summary-card h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 14px;
+      color: var(--text-dark);
+    }
+    .summary-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.88rem;
+    }
+    .summary-item:last-child { border-bottom: none; }
+    .summary-item-name { color: var(--text-dark); font-weight: 500; }
+    .summary-item-qty { color: var(--muted); font-size: 0.78rem; }
+    .summary-item-price { color: var(--gold); font-weight: 700; }
+    /* ── History card ── */
+    .history-card {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px 20px;
+      margin-bottom: 16px;
+      border: 1px solid var(--border);
+    }
+    .history-card h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: var(--text-dark);
+    }
+    .timeline { list-style: none; position: relative; padding-left: 22px; }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 7px; top: 0; bottom: 0;
+      width: 2px;
+      background: linear-gradient(to bottom, var(--primary), rgba(200,65,11,0.1));
+      border-radius: 1px;
+    }
+    .timeline-item {
+      position: relative;
+      padding: 0 0 16px 16px;
+    }
+    .timeline-item:last-child { padding-bottom: 0; }
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -15px; top: 4px;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: var(--primary);
+      border: 2px solid #fff;
+      box-shadow: 0 0 0 2px var(--primary);
+    }
+    .timeline-status {
+      font-size: 0.88rem;
+      font-weight: 700;
+      text-transform: capitalize;
+      color: var(--text-dark);
+    }
+    .timeline-time {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    /* ── Call waiter button ── */
+    #call-waiter-btn {
+      width: 100%;
+      background: #fff;
+      color: var(--primary);
+      border: 2px solid var(--primary);
+      border-radius: var(--radius-btn);
+      padding: 15px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      transition: all 0.15s;
+      margin-bottom: 16px;
+      letter-spacing: 0.02em;
+    }
+    #call-waiter-btn:hover { background: var(--primary); color: #fff; }
+    #call-waiter-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    /* ── Toast ── */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--dark-bg);
+      color: var(--text-light);
+      padding: 10px 20px;
+      border-radius: var(--radius-btn);
+      font-size: 0.85rem;
+      opacity: 0;
+      transition: all 0.3s;
+      z-index: 300;
+      white-space: nowrap;
+      border: 1px solid rgba(245,166,35,0.2);
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+
+<header>
+  <a class="header-back" href="javascript:history.back()">←</a>
+  <span class="header-title">Order Tracking</span>
+  <span class="table-badge" id="table-label">Table —</span>
+</header>
+
+<!-- Loading -->
+<div id="loading-screen">
+  <div class="spinner"></div>
+  <p style="color:var(--muted);margin-top:12px;font-size:0.9rem">Loading your order…</p>
+</div>
+
+<!-- Error -->
+<div id="error-screen">
+  <div class="error-icon">⚠️</div>
+  <h2 id="error-title">Something went wrong</h2>
+  <p id="error-msg">Please try again.</p>
+</div>
+
+<!-- Track content -->
+<div id="track-content">
+  <div class="order-id-row">
+    <span class="order-id">Order: <strong id="order-id-display">—</strong></span>
+    <span class="live-badge"><span class="live-dot"></span> Live</span>
+  </div>
+
+  <!-- Status card -->
+  <div class="status-card">
+    <div class="status-emoji-wrap pulse" id="status-emoji-wrap">
+      <span id="status-emoji">⏳</span>
+    </div>
+    <div class="status-label" id="status-label">pending</div>
+    <div class="status-msg" id="status-msg"></div>
+    <div class="eta-row" id="eta-row"></div>
+  </div>
+
+  <!-- Progress stepper -->
+  <div class="stepper-card">
+    <h3>Order Progress</h3>
+    <div class="progress-track" id="progress-track">
+      <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+      <div class="step" id="step-pending">
+        <div class="step-dot">📋</div>
+        <span class="step-label">Received</span>
+      </div>
+      <div class="step" id="step-preparing">
+        <div class="step-dot">👨‍🍳</div>
+        <span class="step-label">Preparing</span>
+      </div>
+      <div class="step" id="step-ready">
+        <div class="step-dot">✅</div>
+        <span class="step-label">Ready</span>
+      </div>
+      <div class="step" id="step-served">
+        <div class="step-dot">🍽️</div>
+        <span class="step-label">Served</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Countdown -->
+  <div class="countdown-card" id="countdown-card">
+    <div class="countdown-icon-wrap">⏱️</div>
+    <div class="countdown-info">
+      <div class="countdown-title">Estimated ready in</div>
+      <div class="countdown-value" id="countdown-value">—</div>
+    </div>
+  </div>
+
+  <!-- Call waiter -->
+  <button id="call-waiter-btn" onclick="callWaiter()">🔔 Call Waiter</button>
+
+  <!-- Order summary -->
+  <div class="summary-card" id="summary-card" style="display:none">
+    <h3>🧾 Order Summary</h3>
+    <div id="summary-items"></div>
+  </div>
+
+  <!-- Status history -->
+  <div class="history-card">
+    <h3>📍 Order Timeline</h3>
+    <ul class="timeline" id="timeline"></ul>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  const params      = new URLSearchParams(window.location.search);
+  const orderId     = params.get('orderId');
+  const tableNumber = params.get('table');
+  const sessionId   = params.get('session');
+
+  let currentOrder = null;
+  let countdownInterval = null;
+  let socket = null;
+
+  const STATUS_STEPS = ['pending', 'preparing', 'ready', 'served'];
+  const STATUS_EMOJI = {
+    pending:   '⏳',
+    preparing: '🔥',
+    ready:     '🎉',
+    served:    '✅',
+    cancelled: '❌',
+  };
+  const STATUS_MSG = {
+    pending:   'Your order has been received!',
+    preparing: 'Our chefs are crafting your meal with love.',
+    ready:     'Your order is ready! A waiter will bring it shortly.',
+    served:    'Enjoy your meal! Bon appétit 🙏',
+    cancelled: 'Your order was cancelled.',
+  };
+
+  function showError(title, msg) {
+    document.getElementById('loading-screen').style.display = 'none';
+    document.getElementById('track-content').style.display = 'none';
+    const err = document.getElementById('error-screen');
+    err.style.display = 'flex';
+    document.getElementById('error-title').textContent = title;
+    document.getElementById('error-msg').textContent = msg;
+  }
+
+  if (!orderId || !tableNumber || !sessionId) {
+    showError('Invalid Link', 'Invalid QR code. Please scan again.');
+  } else {
+    document.getElementById('table-label').textContent = 'Table ' + tableNumber;
+    init();
+  }
+
+  async function init() {
+    await loadOrder();
+    connectSocket();
+  }
+
+  async function loadOrder() {
+    try {
+      const res = await fetch('/api/orders/' + encodeURIComponent(orderId));
+      if (!res.ok) {
+        showError('Order Not Found', 'Could not find your order. Please contact staff.');
+        return;
+      }
+      const order = await res.json();
+      currentOrder = order;
+      renderOrder(order);
+    } catch (e) {
+      showError('Network Error', 'Could not load your order. Please try again.');
+    }
+  }
+
+  function renderOrder(order) {
+    document.getElementById('loading-screen').style.display = 'none';
+    document.getElementById('track-content').style.display = 'block';
+    document.getElementById('order-id-display').textContent = order.orderId || order._id;
+    updateStatus(order.status, order.estimatedReadyAt);
+    renderTimeline(order.statusHistory || []);
+    renderSummary(order.items || []);
+  }
+
+  function updateStatus(status, estimatedReadyAt) {
+    document.getElementById('status-emoji').textContent = STATUS_EMOJI[status] || '⏳';
+    const labelEl = document.getElementById('status-label');
+    labelEl.textContent = status;
+    labelEl.className = 'status-label ' + status;
+
+    const msgEl = document.getElementById('status-msg');
+    msgEl.textContent = STATUS_MSG[status] || '';
+
+    const emojiWrap = document.getElementById('status-emoji-wrap');
+    emojiWrap.classList.toggle('pulse', status === 'preparing' || status === 'pending');
+
+    const etaRow = document.getElementById('eta-row');
+    if (estimatedReadyAt && status !== 'served' && status !== 'cancelled') {
+      etaRow.innerHTML = 'Est. ready at <strong>' + formatTime(new Date(estimatedReadyAt)) + '</strong>';
+    } else {
+      etaRow.textContent = '';
+    }
+
+    const stepIndex = STATUS_STEPS.indexOf(status);
+    STATUS_STEPS.forEach((s, i) => {
+      const el = document.getElementById('step-' + s);
+      if (!el) return;
+      el.classList.remove('done', 'active');
+      if (i < stepIndex) el.classList.add('done');
+      else if (i === stepIndex) el.classList.add('active');
+    });
+
+    const pct = stepIndex <= 0 ? 0 : (stepIndex / (STATUS_STEPS.length - 1)) * 100;
+    document.getElementById('progress-fill').style.width = pct + '%';
+
+    clearInterval(countdownInterval);
+    const countdownCard = document.getElementById('countdown-card');
+    if (estimatedReadyAt && status !== 'served' && status !== 'cancelled') {
+      countdownCard.style.display = 'flex';
+      startCountdown(new Date(estimatedReadyAt));
+    } else {
+      countdownCard.style.display = 'none';
+    }
+
+    const waiterBtn = document.getElementById('call-waiter-btn');
+    waiterBtn.style.display = (status === 'served' || status === 'cancelled') ? 'none' : 'block';
+  }
+
+  function startCountdown(etaDate) {
+    function tick() {
+      const diff = etaDate - new Date();
+      const el = document.getElementById('countdown-value');
+      if (diff <= 0) {
+        el.textContent = 'Any moment now!';
+        clearInterval(countdownInterval);
+        return;
+      }
+      const mins = Math.floor(diff / 60000);
+      const secs = Math.floor((diff % 60000) / 1000);
+      el.textContent = mins + 'm ' + String(secs).padStart(2, '0') + 's';
+    }
+    tick();
+    countdownInterval = setInterval(tick, 1000);
+  }
+
+  function renderSummary(items) {
+    if (!items || !items.length) return;
+    const card = document.getElementById('summary-card');
+    const container = document.getElementById('summary-items');
+    card.style.display = 'block';
+    container.innerHTML = '';
+    for (const item of items) {
+      const name = item.menuItemId?.name || item.name || 'Item';
+      const price = item.menuItemId?.price || item.price || 0;
+      const qty = item.quantity || 1;
+      const row = document.createElement('div');
+      row.className = 'summary-item';
+      row.innerHTML = `
+        <span class="summary-item-name">${escHtml(name)}</span>
+        <span class="summary-item-qty">× ${qty}</span>
+        <span class="summary-item-price">₹${(price * qty).toFixed(2)}</span>
+      `;
+      container.appendChild(row);
+    }
+  }
+
+  function renderTimeline(history) {
+    const ul = document.getElementById('timeline');
+    ul.innerHTML = '';
+    if (!history.length) {
+      ul.innerHTML = '<li style="color:var(--muted);font-size:0.85rem">No history yet.</li>';
+      return;
+    }
+    const sorted = [...history].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    for (const entry of sorted) {
+      const li = document.createElement('li');
+      li.className = 'timeline-item';
+      li.innerHTML = `
+        <div class="timeline-status">${escHtml(entry.status)}</div>
+        <div class="timeline-time">${formatDateTime(new Date(entry.timestamp))}</div>
+      `;
+      ul.appendChild(li);
+    }
+  }
+
+  function connectSocket() {
+    try {
+      socket = io();
+      socket.on('connect', () => {
+        socket.emit('join:session', { sessionId, tableNumber: parseInt(tableNumber, 10) });
+      });
+      socket.on('order:your-status-changed', (payload) => {
+        const payloadOrderId = payload.orderId || payload._id;
+        if (payloadOrderId && String(payloadOrderId) !== String(orderId)) return;
+        updateStatus(payload.status, payload.estimatedReadyAt);
+        loadOrder();
+        showToast('Order status: ' + payload.status);
+
+        // Auto-close tab when order is served
+        if (payload.status === 'served') {
+          showToast('Your order has been served! Enjoy your meal 🙏');
+          setTimeout(() => {
+            // Try to close the tab; if it can't be closed, redirect to start
+            try { window.close(); } catch(e) {}
+            // Fallback: redirect to start page after 3s
+            setTimeout(() => {
+              window.location.href = '/start.html';
+            }, 3000);
+          }, 2500);
+        }
+      });
+    } catch (e) {
+      console.warn('Socket.io unavailable:', e.message);
+    }
+  }
+
+  function callWaiter() {
+    const btn = document.getElementById('call-waiter-btn');
+    if (!socket || !socket.connected) {
+      showToast('Not connected. Please refresh.');
+      return;
+    }
+    socket.emit('customer:call-waiter', { sessionId, tableNumber: parseInt(tableNumber, 10) });
+    btn.disabled = true;
+    btn.textContent = '✅ Waiter called!';
+    showToast('Waiter has been called.');
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.textContent = '🔔 Call Waiter';
+    }, 30000);
+  }
+
+  function formatTime(date) {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+  function formatDateTime(date) {
+    return date.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+  function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  let toastTimer;
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+  }
+</script>
+</body>
+</html>
